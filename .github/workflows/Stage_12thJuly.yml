@@ -1,0 +1,30 @@
+name: Upload to Stage 12thJuly
+
+on:
+  workflow_dispatch
+
+jobs:
+  deploy:
+    name: Upload to Amazon S3
+    runs-on: ubuntu-latest
+    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Zipping files
+      run: zip -r ${{ github.event.repository.name }}.zip . -x '*.git*' '*.idea*'
+
+    - name: Configure AWS credentials from Test account
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_KEY_ID2 }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY2 }}
+        aws-region: ${{ secrets.AWS_REGION2 }}
+
+    - name: Copy files to the test website with the AWS CLI
+      run: |
+        aws s3 cp ${{ github.event.repository.name }}.zip s3://${{ secrets.AWS_BUCKET2 }}/${{ secrets.AWS_DIRNAME2 }}/${{ github.event.repository.name }}.zip
